@@ -1,0 +1,6 @@
+{
+  "name": "Scene to Story!",
+  "description": "A step-by-step English story writing studio where students observe a scene, plan, draft, receive one focused Coach Pic question, and revise by themselves.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

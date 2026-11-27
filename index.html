@@ -1,110 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f5efe6" />
-  <title>Scene to Story!</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="app-shell">
-    <header class="app-header">
-      <button class="icon-btn" id="homeBtn" aria-label="Home">⌂</button>
-      <div class="step-wrap">
-        <div class="step-label" id="stepLabel">Start</div>
-        <div class="step-bar" aria-label="Writing progress">
-          <span class="step-dot" data-step="1"></span><span class="step-dot" data-step="2"></span><span class="step-dot" data-step="3"></span><span class="step-dot" data-step="4"></span><span class="step-dot" data-step="5"></span>
-        </div>
-      </div>
-      <div class="level-badge" id="levelBadge">Level 2</div>
-    </header>
-
-    <nav class="account-nav">
-      <button class="nav-btn active" data-view="write">Write</button>
-      <button class="nav-btn" data-view="records">My Records</button>
-      <button class="nav-btn hidden" id="teacherTab" data-view="teacher">Teacher View</button>
-      <span class="user-chip" id="userChip">Guest</span>
-    </nav>
-
-    <section class="screen active" id="startScreen">
-      <div class="hero-card">
-        <div class="hero-illustration" aria-label="Rainy bus stop picture prompt">
-          <div class="rain"></div><div class="bus-stop">BUS</div><div class="student-a">🧑‍🎓</div><div class="umbrella">☂️</div><div class="student-b">🧑‍🎓</div>
-        </div>
-        <p class="eyebrow">AI Writing Coach</p>
-        <h1>Scene to Story!</h1>
-        <p class="lead">Look at a picture. Build a story. Improve it by yourself.</p>
-        <div class="topic-card"><strong>Topic: A Rainy Day Surprise</strong><p>A teenager waits at a bus stop in the rain. Another student offers an umbrella.</p></div>
-        <div class="privacy-card"><strong>Privacy first</strong><p>Do not write your real name, school, phone number, or address.</p></div>
-        <div class="auth-actions">
-          <button class="google-btn" id="googleLoginBtn">G&nbsp; Log in with Google</button>
-          <button class="secondary-btn" id="demoLoginBtn">Use Demo Student</button>
-        </div>
-        <button class="primary-btn full" id="startWritingBtn">Start Writing</button>
-      </div>
-    </section>
-
-    <section class="screen" id="planScreen">
-      <div class="panel-card">
-        <p class="eyebrow">Step 1</p><h2>Observe &amp; Plan</h2><p class="helper">Answer the four questions before you write.</p>
-        <div class="mini-picture"><div class="rain"></div><div class="bus-stop">BUS</div><div class="student-a">🧑‍🎓</div><div class="umbrella">☂️</div><div class="student-b">🧑‍🎓</div></div>
-        <div class="plan-grid">
-          <label>Who?<input id="planWho" placeholder="Two students..." /></label>
-          <label>Where?<input id="planWhere" placeholder="At a bus stop..." /></label>
-          <label>What happened?<textarea id="planWhat" rows="3" placeholder="It started raining..."></textarea></label>
-          <label>How did they feel?<input id="planFeel" placeholder="Surprised, thankful..." /></label>
-        </div>
-      </div>
-    </section>
-
-    <section class="screen" id="draftScreen">
-      <div class="panel-card">
-        <p class="eyebrow">Step 2</p><h2>Draft</h2><div class="support-panel" id="supportPanel"></div>
-        <label class="writing-label">Write 6–8 sentences<textarea id="draftText" class="writing-box" rows="12" placeholder="Write your story here..."></textarea></label>
-        <div class="writing-meta"><span id="sentenceCount">0 sentences</span><span>first · then · after that · because · so · finally</span></div>
-        <div class="privacy-warning hidden" id="privacyWarning">Please do not write your real name, school, phone number, or address. Rewrite without them.</div>
-      </div>
-    </section>
-
-    <section class="screen" id="hintScreen">
-      <div class="panel-card">
-        <p class="eyebrow">Step 3</p><h2>Coach Hint</h2>
-        <div class="draft-preview" id="draftPreview"></div>
-        <div class="coach-card"><div class="coach-avatar">🖼️</div><div><strong>Coach Pic</strong><p class="muted">AI can be wrong.</p></div></div>
-        <div class="feedback-box"><p><strong>Praise:</strong> <span id="praiseText"></span></p><p><strong>Fix:</strong> <span id="fixText"></span></p><p><strong>Question:</strong> <span id="questionText"></span></p></div>
-        <button class="text-btn" id="koreanHelpBtn">한국어 도움</button><div class="korean-help hidden" id="koreanHelp"></div>
-        <div class="hint-ladder"><button class="secondary-btn" id="hint1Btn">Hint 1</button><button class="secondary-btn" id="hint2Btn">Hint 2</button><button class="secondary-btn" id="hint3Btn">Hint 3</button></div>
-        <div class="hint-output" id="hintOutput">Use the hints only if you need them.</div>
-      </div>
-    </section>
-
-    <section class="screen" id="rewriteScreen">
-      <div class="panel-card">
-        <p class="eyebrow">Step 4</p><h2>Rewrite</h2>
-        <details class="original-card"><summary>Show original draft</summary><p id="originalDraftText"></p></details>
-        <label class="writing-label">Rewrite the story yourself<textarea id="rewriteText" class="writing-box" rows="12"></textarea></label>
-        <div class="focus-note" id="rewriteFocus"></div>
-      </div>
-    </section>
-
-    <section class="screen" id="finishScreen">
-      <div class="panel-card">
-        <p class="eyebrow">Step 5</p><h2>Finish</h2>
-        <div class="compare-grid"><div><h3>Before</h3><div class="compare-box" id="beforeText"></div></div><div><h3>After</h3><div class="compare-box" id="afterText"></div></div></div>
-        <label>What I changed<textarea id="reflectionText" rows="4" placeholder="I changed..."></textarea></label>
-        <div class="ai-summary" id="aiSummary"></div>
-        <button class="secondary-btn full" id="sampleBtn">See a Sample</button>
-        <div class="sample-card hidden" id="sampleCard"><strong>Sample paragraph</strong><p>Yesterday, I was waiting for the bus after school when it suddenly started to rain. I did not have an umbrella, so I tried to stand under the bus stop sign. Then, another student came and shared her umbrella with me. At first, I felt surprised because we did not know each other. We talked about school while we waited for the bus. Finally, the bus arrived, and I thanked her for helping me. It was a small but kind surprise on a rainy day.</p></div>
-        <button class="primary-btn full" id="saveRecordBtn">Save</button><p class="save-status" id="saveStatus"></p>
-      </div>
-    </section>
-
-    <section class="screen" id="recordsScreen"><div class="panel-card"><p class="eyebrow">My Records</p><h2>Your saved writing</h2><div id="recordsList" class="records-list"></div></div></section>
-    <section class="screen" id="teacherScreen"><div class="panel-card"><p class="eyebrow">Teacher View</p><h2>All student records</h2><p class="helper">Read-only.</p><div id="teacherRecordsList" class="records-list"></div></div></section>
-
-    <footer class="bottom-nav hidden" id="bottomNav"><button class="secondary-btn" id="backBtn">Back</button><button class="primary-btn" id="nextBtn">Next</button></footer>
-  </main>
-  <script type="module" src="script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scene to Story! — English Story Writing Coach</title>
+    <meta name="description" content="A step-by-step English story writing studio where students observe a scene, plan, draft, receive one focused Coach Pic question, and revise by themselves." />
+    <meta property="og:title" content="Scene to Story!" />
+    <meta property="og:description" content="Observe a scene, write your story, get one focused question from Coach Pic, and revise by yourself." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
+
