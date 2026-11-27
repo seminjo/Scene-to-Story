@@ -37,7 +37,12 @@ export function Step2Draft({
         <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-700">
-              Level {supportLevel} Writing Support
+              Level {supportLevel} ·{' '}
+              {supportLevel === 1
+                ? 'More Support'
+                : supportLevel === 2
+                ? 'Some Support'
+                : 'Less Support'}
             </span>
             <span className="text-xs text-slate-500 font-mono tabular-nums">
               {supportLevel === 1
@@ -51,7 +56,7 @@ export function Step2Draft({
           {supportLevel === 1 && (
             <div className="space-y-2.5">
               <p className="text-xs text-slate-600">
-                Tap any frame to add it to your box, then replace the blanks with your own story.
+                Tap a sentence frame to add it, then fill in your own words.
               </p>
               <div className="space-y-2">
                 {topic.level1Frames.map((frame, i) => (
@@ -71,7 +76,7 @@ export function Step2Draft({
           {supportLevel === 2 && (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-slate-700">Guiding Questions</p>
+                <p className="text-xs font-semibold text-slate-700">Short Questions</p>
                 <ul className="space-y-1 text-xs text-slate-600 list-disc pl-4">
                   {topic.level2Keywords.questions.map((q) => (
                     <li key={q}>{q}</li>
@@ -79,7 +84,7 @@ export function Step2Draft({
                 </ul>
               </div>
               <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                <p className="text-xs font-semibold text-slate-700">Useful Scene Words</p>
+                <p className="text-xs font-semibold text-slate-700">Useful Words</p>
                 <div className="flex flex-wrap gap-1.5">
                   {topic.level2Keywords.vocabulary.map((word) => (
                     <button
@@ -99,14 +104,16 @@ export function Step2Draft({
           {supportLevel === 3 && (
             <div className="space-y-2.5">
               <p className="text-xs text-slate-600">
-                Free writing mode! Try linking your 6–8 sentences with sequencing and reason words:
+                Write freely! You can connect your sentences with these words:
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {topic.level3Connectors.map((conn) => (
                   <button
                     key={conn}
                     type="button"
-                    onClick={() => insertSnippet(conn === 'Because' || conn === 'So' ? conn.toLowerCase() : `${conn},`)}
+                    onClick={() =>
+                      insertSnippet(conn === 'because' || conn === 'so' ? conn : `${conn},`)
+                    }
                     className="min-h-[36px] px-3 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-blue-50 hover:text-blue-800 rounded-lg transition-colors"
                   >
                     {conn}
@@ -174,12 +181,12 @@ export function Step2Draft({
           </h1>
           <span className="text-xs font-mono tabular-nums text-slate-500">
             {sentences} {sentences === 1 ? 'sentence' : 'sentences'} · {words}{' '}
-            {words === 1 ? 'word' : 'words'} · Goal: 6–8 sentences
+            {words === 1 ? 'word' : 'words'} · Goal: 5–7 sentences
           </span>
         </div>
 
         <p className="text-sm text-slate-600">
-          Write the story in your own words. Coach Pic will look at one focus point when you finish.
+          Write your own short story. Next, Coach Pic will share 1–3 simple tips to help you revise.
         </p>
 
         {privacy.hasPII && (
@@ -188,10 +195,7 @@ export function Step2Draft({
             className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 flex items-start gap-2.5 text-sm text-amber-900"
           >
             <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
-            <div>
-              <p className="font-semibold">Personal information detected</p>
-              <p className="mt-0.5">{privacy.message}</p>
-            </div>
+            <span>{privacy.message}</span>
           </div>
         )}
 
@@ -203,14 +207,14 @@ export function Step2Draft({
           value={draft}
           onChange={(e) => onChangeDraft(e.target.value)}
           rows={9}
-          placeholder="Yesterday, I was waiting at the bus stop after school..."
+          placeholder="Yesterday, I waited for the bus after school..."
           className="w-full min-h-[240px] p-4 text-base leading-relaxed bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 resize-y"
         />
 
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-slate-500">
-          <span>Connector ideas: First · Then · After that · Because · So · Finally</span>
+          <span>Connectors: first · then · next · because · so · finally</span>
           <span className="font-mono tabular-nums">
-            {sentences >= 6 ? 'Great length for B1!' : `${Math.max(0, 6 - sentences)} more to reach 6 sentences`}
+            {sentences >= 5 ? 'Great story length!' : `${Math.max(0, 5 - sentences)} more to reach 5 sentences`}
           </span>
         </div>
       </div>

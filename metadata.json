@@ -1,6 +1,6 @@
 {
   "name": "Scene to Story!",
-  "description": "A step-by-step English story writing studio where students observe a scene, plan, draft, receive one focused Coach Pic question, and revise by themselves.",
+  "description": "A step-by-step English story writing studio for CEFR A2 students: choose a scenario, plan, draft, get 1-3 Coach Pic feedback points, rewrite, check again, and reflect.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

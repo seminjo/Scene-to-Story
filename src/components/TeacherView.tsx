@@ -47,7 +47,7 @@ export function TeacherView({
 
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="teacher-topic-filter" className="sr-only">
-            Filter by topic
+            Filter by scenario
           </label>
           <select
             id="teacher-topic-filter"
@@ -55,7 +55,7 @@ export function TeacherView({
             onChange={(e) => setTopicFilter(e.target.value)}
             className="min-h-[44px] px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl text-slate-700"
           >
-            <option value="all">All Topics</option>
+            <option value="all">All Scenarios</option>
             {topics.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.title}
@@ -90,53 +90,73 @@ export function TeacherView({
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map((rec) => (
-            <article
-              key={rec.id}
-              className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                <div className="space-y-0.5">
-                  <h2 className="text-base font-bold text-slate-900">
-                    {rec.studentName} · {rec.topicTitle}
-                  </h2>
-                  <p className="text-xs text-slate-500 font-mono tabular-nums">
-                    {formatDate(rec.date)} · Level {rec.supportLevel} · {rec.hintsUsed}{' '}
-                    {rec.hintsUsed === 1 ? 'hint' : 'hints'} (max Hint {rec.maxHintLevel})
-                    {typeof rec.koreanHelpUsed === 'boolean'
-                      ? ` · Korean Help ${rec.koreanHelpUsed ? 'ON' : 'OFF'}`
-                      : ''}
-                    {typeof rec.whyOpened === 'boolean'
-                      ? ` · Why? ${rec.whyOpened ? 'Yes' : 'No'}`
-                      : ''}
-                  </p>
-                </div>
-                <span className="text-xs text-slate-400 font-mono">Read-only</span>
-              </div>
+          {filtered.map((rec) => {
+            const feedbackCount =
+              typeof rec.feedbackCount === 'number'
+                ? rec.feedbackCount
+                : Array.isArray(rec.feedbackPoints)
+                ? rec.feedbackPoints.length
+                : 0;
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <p className="text-xs font-bold text-slate-600">First Draft</p>
-                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                    {rec.firstDraft}
-                  </p>
+            return (
+              <article
+                key={rec.id}
+                className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                  <div className="space-y-0.5">
+                    <h2 className="text-base font-bold text-slate-900">
+                      {rec.studentName} · {rec.topicTitle}
+                    </h2>
+                    <p className="text-xs text-slate-500 font-mono tabular-nums">
+                      {formatDate(rec.date)} · Level {rec.supportLevel} · {feedbackCount}{' '}
+                      {feedbackCount === 1 ? 'feedback point' : 'feedback points'} · Why?{' '}
+                      {rec.whyOpened ? 'Yes' : 'No'} · Korean Help{' '}
+                      {rec.koreanHelpUsed ? 'ON' : 'OFF'} · Check Again{' '}
+                      {rec.checkAgainUsed ? 'Yes' : 'No'}
+                    </p>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">Read-only</span>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                  <p className="text-xs font-bold text-blue-700">Final Text</p>
-                  <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-wrap">
-                    {rec.finalDraft}
-                  </p>
-                </div>
-              </div>
 
-              {rec.reflectionNote && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <p className="text-xs font-bold text-slate-600">Original Draft</p>
+                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                      {rec.firstDraft}
+                    </p>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <p className="text-xs font-bold text-blue-700">Final Revised Draft</p>
+                    <p className="text-sm text-slate-900 leading-relaxed whitespace-pre-wrap">
+                      {rec.finalDraft}
+                    </p>
+                  </div>
+                </div>
+
+                {Array.isArray(rec.feedbackPoints) && rec.feedbackPoints.length > 0 && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                    <p className="font-bold text-slate-700">AI Feedback Points</p>
+                    <ul className="space-y-1 text-slate-600">
+                      {rec.feedbackPoints.map((pt, i) => (
+                        <li key={i}>
+                          <span className="font-semibold text-slate-800">
+                            {pt.category} ({pt.summaryTag}):
+                          </span>{' '}
+                          “{pt.yourSentence}” — {pt.thinkAbout}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <p className="text-xs text-slate-600">
                   <span className="font-semibold text-slate-700">Student reflection: </span>
-                  {rec.reflectionNote}
+                  {rec.reflectionNote || 'No reflection note added.'}
                 </p>
-              )}
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </div>

@@ -12,6 +12,23 @@ const TOKEN_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toStri
 const DATA_DIR = path.resolve(process.cwd(), '.data');
 const RECORDS_FILE = path.join(DATA_DIR, 'records.json');
 
+interface SavedFeedbackPointPayload {
+  category: string;
+  summaryTag: string;
+  yourSentence: string;
+  thinkAbout: string;
+  question: string;
+}
+
+interface IncomingFeedbackPoint {
+  id?: string;
+  category?: string;
+  summaryTag?: string;
+  yourSentence?: string;
+  thinkAbout?: string;
+  question?: string;
+}
+
 interface StoryRecordPayload {
   id: string;
   studentId: string;
@@ -20,15 +37,15 @@ interface StoryRecordPayload {
   topicId: string;
   topicTitle: string;
   supportLevel: 1 | 2 | 3;
-  hintsUsed: number;
-  maxHintLevel: 1 | 2 | 3;
+  feedbackCount: number;
+  feedbackPoints: SavedFeedbackPointPayload[];
   firstDraft: string;
   finalDraft: string;
   reflectionNote: string;
   aiHelpSummary: string;
-  feedbackFocus?: string;
-  whyOpened?: boolean;
-  koreanHelpUsed?: boolean;
+  whyOpened: boolean;
+  koreanHelpUsed: boolean;
+  checkAgainUsed: boolean;
 }
 
 const PHONE_REGEX = /(?:\+?\d{1,3}[-.\s]?)?(?:01[016789]|02|0[3-6][1-5]|\d{3})[-.\s]?\d{3,4}[-.\s]?\d{4}\b/;
@@ -103,15 +120,19 @@ function verifyTeacherToken(token: string): boolean {
   }
 }
 
-function pickBestTargetSentence(draft: string, candidate: string): string {
+function splitSentences(draft: string): string[] {
+  return draft
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function pickBestTargetSentence(draft: string, candidate: string, fallbackIndex = 0): string {
   const cleanCandidate = (candidate || '').trim();
   if (cleanCandidate && draft.includes(cleanCandidate)) {
     return cleanCandidate;
   }
-  const sentences = draft
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const sentences = splitSentences(draft);
   if (sentences.length === 0) return draft.trim();
   if (cleanCandidate) {
     const lowerCand = cleanCandidate.toLowerCase();
@@ -120,41 +141,56 @@ function pickBestTargetSentence(draft: string, candidate: string): string {
     );
     if (matched) return matched;
   }
-  return sentences[Math.min(1, sentences.length - 1)] || sentences[0];
+  return sentences[Math.min(fallbackIndex, sentences.length - 1)] || sentences[0];
 }
 
-function buildFallbackHint(draft: string, topicTitle: string) {
-  const sentences = draft
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const targetSentence = sentences[Math.min(1, Math.max(0, sentences.length - 1))] || draft.trim();
-  return {
-    focusCategory: 'Grammar · Past time and connection',
-    targetSentence,
-    praise: `You clearly shared an important event from "${topicTitle}" in your story.`,
-    fix: `Look at "${targetSentence}".`,
-    explanation:
-      'Because this story happens in the past, matching your verb tense and event connector helps readers follow easily.',
-    question: 'What verb form or time connector fits an event that happened yesterday?',
-    whyExplanation:
-      'English verbs change to show completed past actions, and time connectors link events in order. Checking this one part makes your whole story smoother.',
-    hint2:
-      'Check the main action verb for past time, or check if a word like "Then" or "Because" helps here.',
-    hint3Pattern: 'Time connector + past-tense verb',
-    hint3Example: 'Yesterday, I walked home. Then, the sky suddenly turned dark.',
-    koreanHelp: {
-      praise: `"${topicTitle}" 장면에서 중요한 사건을 분명하게 담아냈어요.`,
-      fix: '강조된 문장의 동사 형태와 연결 표현을 한 번 더 살펴보세요.',
-      explanation:
-        '이미 지난 과거의 이야기이므로 동사 시제와 순서 연결어가 맞으면 독자가 흐름을 쉽게 따라갈 수 있어요.',
-      question: '어제 일어난 일을 나타낼 때 어떤 동사 형태나 시간 연결어가 어울릴까요?',
+function buildFallbackFeedback(draft: string, topicTitle: string) {
+  const sentences = splitSentences(draft);
+  const firstSentence = sentences[0] || draft.trim();
+  const secondSentence = sentences[1] || firstSentence;
+
+  const feedbackPoints = [
+    {
+      id: 'fb-1',
+      category: 'Grammar',
+      summaryTag: 'Check past tense',
+      yourSentence: firstSentence,
+      thinkAbout: 'This story happened in the past. Check the verb in this sentence.',
+      question: 'This happened yesterday. What past form of the verb do you need?',
       whyExplanation:
-        '영어에서는 이미 끝난 과거의 행동을 나타낼 때 동사 형태가 바뀌며, 연결어가 사건 순서를 보여 줍니다.',
-      hint1: '강조된 문장에서 시제나 연결을 점검할 핵심 부분을 살펴보세요.',
-      hint2: '핵심 동사가 과거 시제인지, 사건을 잇는 연결어가 필요한지 생각해 보세요.',
-      hint3: '예문에서 과거 시제 동사와 "Then"이 어떻게 쓰였는지 참고해 보세요.',
+        'We often change verbs when we talk about past events. This helps the reader know when the action happened.',
+      koreanHelp: {
+        thinkAbout: '이미 일어난 이야기이므로 동사의 과거형을 확인해 보세요.',
+        question: '어제 일어난 일이라면 동사를 어떤 과거 형태로 써야 할까요?',
+        whyExplanation:
+          '이미 지난 일을 말할 때 동사를 과거형으로 바꾸면 독자가 언제 일어난 일인지 쉽게 알 수 있어요.',
+      },
     },
+  ];
+
+  if (sentences.length >= 2 && secondSentence !== firstSentence) {
+    feedbackPoints.push({
+      id: 'fb-2',
+      category: 'Sentence Connection',
+      summaryTag: 'Connect story order',
+      yourSentence: secondSentence,
+      thinkAbout: 'Check how this sentence connects to the event before it.',
+      question: 'Can you add a word like "then", "next", or "because" here?',
+      whyExplanation:
+        'Connecting words show the order of events. They make your story easy to read.',
+      koreanHelp: {
+        thinkAbout: '앞 문장과 이 문장이 자연스럽게 이어지는지 확인해 보세요.',
+        question: '"then", "next", "because" 같은 연결어를 넣어 볼 수 있을까요?',
+        whyExplanation:
+          '연결어를 쓰면 사건의 순서나 이유가 잘 드러나서 이야기를 읽기 쉬워져요.',
+      },
+    });
+  }
+
+  return {
+    goodPoint: `You showed the main event in "${topicTitle}" clearly.`,
+    goodPointKorean: `"${topicTitle}" 이야기의 중심 사건을 분명하게 잘 표현했어요.`,
+    feedbackPoints,
     isUncertain: false,
     usedFallback: true,
   };
@@ -200,36 +236,50 @@ async function createApp() {
     const ai = getGenAIClient();
 
     if (!ai) {
-      res.json({ feedback: buildFallbackHint(draft, cleanTitle) });
+      res.json({ feedback: buildFallbackFeedback(draft, cleanTitle) });
       return;
     }
 
     try {
       const systemInstruction = [
-        'You are Coach Pic, a friendly English writing coach for Korean high school first-year students (CEFR B1).',
-        'CRITICAL RULES:',
-        '1. Give feedback on ONLY ONE writing point at a time. Never list multiple problems.',
-        '2. Choose the single most important issue in this strict priority order:',
-        '   Meaning / clarity -> Story organization -> Missing detail -> Sentence connection -> Grammar -> Spelling.',
-        '3. Structure the main feedback as: Praise -> Focused Fix -> Short Explanation -> Guiding Question.',
-        '   - praise: Mention one specific strength that actually appears in the student draft.',
-        '   - fix: Point only to the exact word, phrase, or sentence that needs attention (e.g., Look at "...").',
-        '   - explanation: Briefly explain why that part needs attention and how it affects meaning, organization, sentence connection, or grammar.',
-        '   - question: End with one guiding question that helps the student revise independently.',
-        '4. Total length of praise + fix + explanation + question combined should be about 40 to 60 words in clear, simple B1 English.',
-        '5. whyExplanation: 1 to 2 additional sentences explaining the same focused point and why the issue matters. Do NOT introduce a new correction point and do NOT give the corrected sentence.',
-        '6. Hint Ladder rules:',
-        '   - targetSentence (Hint 1): Copy verbatim the exact word, phrase, or short sentence from the student draft that needs attention.',
-        '   - hint2 (Hint 2): Name the problem more clearly and ask a smaller guiding question without giving the corrected sentence.',
-        '   - hint3Pattern & hint3Example (Hint 3): Show the same language pattern using a completely different, unrelated example sentence (never from the student topic).',
-        '7. koreanHelp: Explain the meaning of each feedback part in simple Korean (praise, fix, explanation, question, whyExplanation, hint1, hint2, hint3). Help the student understand the concept. Never translate or rewrite the student full paragraph, and never provide the corrected English sentence in Korean Help.',
-        '8. NEVER rewrite the student paragraph, NEVER provide a corrected sentence from the student text, NEVER use negative words ("wrong", "bad", "poor", "failure"), and NEVER give numerical scores. Maximum one emoji.',
-        '9. If uncertain about anything, start with "I think..." and advise checking a dictionary or textbook, and set isUncertain to true.',
+        'You are Coach Pic, a warm English writing coach for Korean middle school 1st-year students (ages 13-14, CEFR A2).',
+        'LANGUAGE LEVEL RULES (CEFR A2):',
+        '- Use short, clear sentences, common everyday vocabulary, and simple grammar explanations.',
+        '- Avoid difficult grammar jargon, long paragraphs, or abstract words.',
+        '- Example style: "This story happened in the past. Check the verb in this sentence."',
+        '',
+        'FEEDBACK STRUCTURE & PRIORITY RULES:',
+        '1. Read the whole student draft first.',
+        '2. Give ONE specific positive comment in goodPoint (what the student actually did well).',
+        '3. Select ONLY the 1 to 3 most important points to improve (maximum 3 points).',
+        '   - If there is only 1 important issue, return 1 point. If 2, return 2. Never force 3.',
+        '   - Do NOT list every small error.',
+        '4. Choose feedback points in this strict priority order (never show this priority list to the student):',
+        '   1) Meaning / clarity',
+        '   2) Story order',
+        '   3) Missing information',
+        '   4) Sentence connection',
+        '   5) Grammar',
+        '   6) Vocabulary',
+        '   7) Spelling / punctuation',
+        '5. For each feedback point:',
+        '   - category: short friendly label (e.g., "Meaning", "Story Order", "Missing Info", "Connection", "Grammar", "Sentence Form", "Vocabulary", "Spelling").',
+        '   - summaryTag: 2-4 words for summary list (e.g., "Check past tense", "Check sentence form", "Add story order").',
+        '   - yourSentence: copy verbatim the exact sentence or phrase from the student draft.',
+        '   - thinkAbout: 1-2 short A2 sentences explaining what to check without giving the answer.',
+        '   - question: 1 simple A2 guiding question.',
+        '   - whyExplanation: 1-2 short A2 sentences explaining why this issue matters, without adding a new problem or giving the corrected sentence.',
+        '   - koreanHelp: short simple Korean explanations for thinkAbout, question, and whyExplanation. Explain the hint concept—NEVER write the corrected English word/sentence in Korean Help (e.g., never say "waited로 바꾸세요").',
+        '6. STRICTLY FORBIDDEN:',
+        '   - NEVER rewrite the student paragraph.',
+        '   - NEVER show the corrected sentence anywhere in English or Korean.',
+        '   - NEVER use negative words ("wrong", "bad", "poor", "failure") or numerical scores.',
+        '7. If unsure about anything, start with "I think..." and suggest checking a dictionary or textbook, setting isUncertain to true.',
       ].join('\n');
 
       const prompt = [
-        `Topic: ${cleanTitle}`,
-        `Student scaffolding level: Level ${level}`,
+        `Scenario: ${cleanTitle}`,
+        `Student support level: Level ${level}`,
         'Student draft:',
         draft.trim(),
       ].join('\n\n');
@@ -243,153 +293,114 @@ async function createApp() {
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              focusCategory: {
+              goodPoint: {
                 type: Type.STRING,
-                description:
-                  'Priority area and short topic label, e.g. "Grammar · Past verb form" or "Sentence connection · Time order".',
+                description: 'One specific positive comment in simple A2 English.',
               },
-              targetSentence: {
+              goodPointKorean: {
                 type: Type.STRING,
-                description:
-                  'Exact verbatim word, phrase, or sentence copied from the student draft to highlight.',
+                description: 'Simple Korean explanation of the good point.',
               },
-              praise: {
-                type: Type.STRING,
-                description: 'Specific strength that actually appears in the student draft.',
-              },
-              fix: {
-                type: Type.STRING,
-                description: 'Points only to the single phrase or sentence needing attention.',
-              },
-              explanation: {
-                type: Type.STRING,
-                description:
-                  'Short explanation of why that part needs attention and how it affects meaning, organization, connection, or grammar.',
-              },
-              question: {
-                type: Type.STRING,
-                description: 'One guiding question ending with ? helping the student revise independently.',
-              },
-              whyExplanation: {
-                type: Type.STRING,
-                description:
-                  '1-2 additional sentences explaining the same focused point and why it matters, without new points or corrected sentences.',
-              },
-              hint2: {
-                type: Type.STRING,
-                description:
-                  'Hint 2: Name the problem more clearly and ask a smaller guiding question without giving the corrected sentence.',
-              },
-              hint3Pattern: {
-                type: Type.STRING,
-                description: 'Short label for the target language pattern.',
-              },
-              hint3Example: {
-                type: Type.STRING,
-                description:
-                  'Completely different unrelated example sentence showing the same pattern.',
-              },
-              koreanHelp: {
-                type: Type.OBJECT,
-                properties: {
-                  praise: { type: Type.STRING },
-                  fix: { type: Type.STRING },
-                  explanation: { type: Type.STRING },
-                  question: { type: Type.STRING },
-                  whyExplanation: { type: Type.STRING },
-                  hint1: { type: Type.STRING },
-                  hint2: { type: Type.STRING },
-                  hint3: { type: Type.STRING },
+              feedbackPoints: {
+                type: Type.ARRAY,
+                description: 'Between 1 and 3 most important feedback points.',
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    category: { type: Type.STRING },
+                    summaryTag: { type: Type.STRING },
+                    yourSentence: { type: Type.STRING },
+                    thinkAbout: { type: Type.STRING },
+                    question: { type: Type.STRING },
+                    whyExplanation: { type: Type.STRING },
+                    koreanHelp: {
+                      type: Type.OBJECT,
+                      properties: {
+                        thinkAbout: { type: Type.STRING },
+                        question: { type: Type.STRING },
+                        whyExplanation: { type: Type.STRING },
+                      },
+                      required: ['thinkAbout', 'question', 'whyExplanation'],
+                    },
+                  },
+                  required: [
+                    'id',
+                    'category',
+                    'summaryTag',
+                    'yourSentence',
+                    'thinkAbout',
+                    'question',
+                    'whyExplanation',
+                    'koreanHelp',
+                  ],
                 },
-                required: [
-                  'praise',
-                  'fix',
-                  'explanation',
-                  'question',
-                  'whyExplanation',
-                  'hint1',
-                  'hint2',
-                  'hint3',
-                ],
               },
               isUncertain: {
                 type: Type.BOOLEAN,
               },
             },
-            required: [
-              'focusCategory',
-              'targetSentence',
-              'praise',
-              'fix',
-              'explanation',
-              'question',
-              'whyExplanation',
-              'hint2',
-              'hint3Pattern',
-              'hint3Example',
-              'koreanHelp',
-              'isUncertain',
-            ],
+            required: ['goodPoint', 'goodPointKorean', 'feedbackPoints', 'isUncertain'],
           },
         },
       });
 
       const parsed = JSON.parse((response.text ?? '{}').trim());
-      const targetSentence = pickBestTargetSentence(draft, parsed.targetSentence);
+      const rawPoints: IncomingFeedbackPoint[] = Array.isArray(parsed.feedbackPoints)
+        ? parsed.feedbackPoints.slice(0, 3)
+        : [];
+
+      if (rawPoints.length === 0) {
+        res.json({ feedback: buildFallbackFeedback(draft, cleanTitle) });
+        return;
+      }
+
+      const normalizedPoints = rawPoints.map((pt, idx) => {
+        const rawPt = pt as IncomingFeedbackPoint & {
+          koreanHelp?: { thinkAbout?: string; question?: string; whyExplanation?: string };
+          whyExplanation?: string;
+        };
+        const matchedSentence = pickBestTargetSentence(draft, rawPt.yourSentence || '', idx);
+        return {
+          id: rawPt.id || `fb-${idx + 1}`,
+          category: rawPt.category || 'Writing Tip',
+          summaryTag: rawPt.summaryTag || 'Check this sentence',
+          yourSentence: matchedSentence,
+          thinkAbout: rawPt.thinkAbout || 'Read this sentence carefully and check the words.',
+          question: rawPt.question || 'How can you make this sentence clearer?',
+          whyExplanation:
+            rawPt.whyExplanation ||
+            'Fixing this part helps the reader understand your story clearly.',
+          koreanHelp: {
+            thinkAbout:
+              rawPt.koreanHelp?.thinkAbout || '이 문장의 표현과 순서를 천천히 확인해 보세요.',
+            question:
+              rawPt.koreanHelp?.question || '이야기의 흐름에 맞게 이 문장을 어떻게 고칠 수 있을까요?',
+            whyExplanation:
+              rawPt.koreanHelp?.whyExplanation ||
+              '이 부분을 고치면 읽는 사람이 이야기를 훨씬 쉽게 이해할 수 있어요.',
+          },
+        };
+      });
 
       res.json({
         feedback: {
-          focusCategory: parsed.focusCategory || 'Meaning / clarity',
-          targetSentence,
-          praise: parsed.praise || 'You clearly shared a key event from the scene.',
-          fix: parsed.fix || `Look at "${targetSentence}".`,
-          explanation:
-            parsed.explanation ||
-            'Adjusting this part will help readers follow your story smoothly.',
-          question: parsed.question || 'How could you revise this part so the time or connection is clear?',
-          whyExplanation:
-            parsed.whyExplanation ||
-            'When this part matches the rest of your story, readers can picture the event right away.',
-          hint2:
-            parsed.hint2 ||
-            'Look closely at the key verb or connector in that phrase and check if it matches your story time.',
-          hint3Pattern: parsed.hint3Pattern || 'Clear past action and connector',
-          hint3Example:
-            parsed.hint3Example || 'Yesterday, I walked home. Then, my friend called me.',
-          koreanHelp: {
-            praise: parsed.koreanHelp?.praise || '장면의 핵심 내용을 잘 표현했어요.',
-            fix: parsed.koreanHelp?.fix || '강조된 표현을 한 번 더 살펴보세요.',
-            explanation:
-              parsed.koreanHelp?.explanation ||
-              '이 부분을 다듬으면 글의 흐름과 의미가 훨씬 자연스러워집니다.',
-            question:
-              parsed.koreanHelp?.question ||
-              '이야기의 시제나 연결이 더 자연스럽게 보이도록 어떻게 바꿀 수 있을까요?',
-            whyExplanation:
-              parsed.koreanHelp?.whyExplanation ||
-              '이 부분이 이야기의 나머지 흐름과 맞으면 독자가 장면을 바로 떠올릴 수 있습니다.',
-            hint1:
-              parsed.koreanHelp?.hint1 ||
-              '노란색으로 강조된 단어·구절·문장을 먼저 확인해 보세요.',
-            hint2:
-              parsed.koreanHelp?.hint2 ||
-              '핵심 동사나 연결어가 이야기의 시간과 흐름에 맞는지 다시 살펴보세요.',
-            hint3:
-              parsed.koreanHelp?.hint3 ||
-              '다른 예시 문장에서 같은 문장 패턴이 어떻게 쓰였는지 참고해 보세요.',
-          },
+          goodPoint: parsed.goodPoint || 'You shared clear events and feelings in your story.',
+          goodPointKorean:
+            parsed.goodPointKorean || '이야기의 중심 내용과 기분을 잘 표현했어요.',
+          feedbackPoints: normalizedPoints,
           isUncertain: Boolean(parsed.isUncertain),
           usedFallback: false,
         },
       });
     } catch (error) {
-      console.error('Gemini hint error, using fallback hint:', error);
-      res.json({ feedback: buildFallbackHint(draft, cleanTitle) });
+      console.error('Gemini hint error, using fallback feedback:', error);
+      res.json({ feedback: buildFallbackFeedback(draft, cleanTitle) });
     }
   });
 
-  app.post('/api/coach/check-revision', async (req, res) => {
-    const { firstDraft, revisedDraft, targetSentence, fixPoint, currentLevel, hintsUsed } = req.body ?? {};
+  app.post('/api/coach/check-again', async (req, res) => {
+    const { firstDraft, revisedDraft, feedbackPoints, currentLevel } = req.body ?? {};
     if (typeof firstDraft !== 'string' || typeof revisedDraft !== 'string' || !revisedDraft.trim()) {
       res.status(400).json({ error: 'INVALID_INPUT', message: 'Revised story cannot be empty.' });
       return;
@@ -405,36 +416,48 @@ async function createApp() {
     }
 
     const level: 1 | 2 | 3 = currentLevel === 1 || currentLevel === 3 ? currentLevel : 2;
-    const hints = typeof hintsUsed === 'number' && hintsUsed >= 1 ? hintsUsed : 1;
+    const points: IncomingFeedbackPoint[] = Array.isArray(feedbackPoints)
+      ? feedbackPoints.slice(0, 3)
+      : [];
 
-    const computeNextLevel = (fixed: boolean): { nextLevel: 1 | 2 | 3; levelChangeReason: 'up' | 'down' | 'same' } => {
-      if (fixed && hints <= 1) {
-        const nextLevel = (level < 3 ? level + 1 : 3) as 1 | 2 | 3;
-        return { nextLevel, levelChangeReason: level < 3 ? 'up' : 'same' };
+    const localCheck = () => {
+      const improved: string[] = [];
+      const remainingPointIds: string[] = [];
+
+      for (const pt of points) {
+        const ptId = String(pt.id || '');
+        const orig = (pt.yourSentence || '').trim();
+        if (orig && !revisedDraft.includes(orig)) {
+          improved.push(`You revised "${pt.summaryTag || pt.category || 'this part'}".`);
+        } else if (orig && revisedDraft.includes(orig)) {
+          if (ptId) remainingPointIds.push(ptId);
+        }
       }
-      if (!fixed && hints >= 2) {
-        const nextLevel = (level > 1 ? level - 1 : 1) as 1 | 2 | 3;
-        return { nextLevel, levelChangeReason: level > 1 ? 'down' : 'same' };
+
+      if (improved.length === 0 && revisedDraft.trim() !== firstDraft.trim()) {
+        improved.push('You updated your story in your own words.');
       }
-      return { nextLevel: level, levelChangeReason: 'same' };
+
+      const nextLevel = (
+        remainingPointIds.length === 0 && improved.length > 0 && level < 3
+          ? level + 1
+          : level
+      ) as 1 | 2 | 3;
+
+      return {
+        improved,
+        remainingPointIds,
+        encouragement:
+          remainingPointIds.length === 0
+            ? 'Great work! You checked your feedback and improved your story.'
+            : 'Nice changes! Look at the remaining tip one more time if you want.',
+        nextLevel,
+      };
     };
 
-    const changedTarget =
-      revisedDraft.trim() !== firstDraft.trim() &&
-      (!targetSentence || !revisedDraft.includes(String(targetSentence).trim()));
-
     const ai = getGenAIClient();
-    if (!ai) {
-      const fixed = changedTarget || revisedDraft.trim() !== firstDraft.trim();
-      const { nextLevel, levelChangeReason } = computeNextLevel(fixed);
-      res.json({
-        fixed,
-        encouragement: fixed
-          ? 'Nice revision! You worked through the hint on your own.'
-          : 'You kept your story safe. Next time, try adjusting the highlighted sentence.',
-        nextLevel,
-        levelChangeReason,
-      });
+    if (!ai || points.length === 0) {
+      res.json(localCheck());
       return;
     }
 
@@ -444,50 +467,78 @@ async function createApp() {
         contents: [
           `Original draft:\n${firstDraft.trim()}`,
           `Revised draft:\n${revisedDraft.trim()}`,
-          `Focused sentence:\n${targetSentence || ''}`,
-          `Focused improvement point:\n${fixPoint || ''}`,
+          `Original feedback points:\n${JSON.stringify(
+            points.map((p) => ({
+              id: p.id,
+              category: p.category,
+              summaryTag: p.summaryTag,
+              yourSentence: p.yourSentence,
+              thinkAbout: p.thinkAbout,
+            }))
+          )}`,
         ].join('\n\n'),
         config: {
-          systemInstruction:
-            'You are Coach Pic. Check if the student meaningfully revised the focused sentence or improvement point. Never show a corrected sentence, never give scores, and never use negative words like wrong, bad, poor, or failure. Respond in <= 15 words of friendly B1 English.',
+          systemInstruction: [
+            'You are Coach Pic for Korean middle school 1st-year students (CEFR A2).',
+            'Compare the original draft and revised draft against ONLY the given original feedback points.',
+            'RULES:',
+            '- Do NOT introduce any new correction points or start a new feedback cycle.',
+            '- In "improved", write 1 to 3 short, friendly A2 sentences starting like "You changed..." or "You improved..." for each feedback point the student fixed.',
+            '- In "remainingPointIds", list ONLY the IDs from the given feedbackPoints that still clearly need attention (empty array if all were fixed).',
+            '- NEVER show a corrected sentence, NEVER use negative words ("wrong", "bad", "poor", "failure"), and NEVER give scores.',
+            '- Keep "encouragement" to one short, warm A2 sentence.',
+          ].join('\n'),
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              fixed: { type: Type.BOOLEAN },
+              improved: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+              remainingPointIds: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
               encouragement: { type: Type.STRING },
             },
-            required: ['fixed', 'encouragement'],
+            required: ['improved', 'remainingPointIds', 'encouragement'],
           },
         },
       });
 
       const parsed = JSON.parse((response.text ?? '{}').trim());
-      const fixed = Boolean(parsed.fixed) || changedTarget;
-      const { nextLevel, levelChangeReason } = computeNextLevel(fixed);
+      const validIds = new Set(points.map((p) => String(p.id || '')).filter(Boolean));
+      const remainingPointIds: string[] = Array.isArray(parsed.remainingPointIds)
+        ? parsed.remainingPointIds.filter((id: unknown) => typeof id === 'string' && validIds.has(id))
+        : [];
+      const improved: string[] = Array.isArray(parsed.improved)
+        ? parsed.improved.filter((s: unknown) => typeof s === 'string' && s.trim().length > 0).slice(0, 3)
+        : [];
+
+      if (improved.length === 0 && revisedDraft.trim() !== firstDraft.trim() && remainingPointIds.length < points.length) {
+        improved.push('You updated your story using the feedback.');
+      }
+
+      const nextLevel = (
+        remainingPointIds.length === 0 && improved.length > 0 && level < 3
+          ? level + 1
+          : level
+      ) as 1 | 2 | 3;
 
       res.json({
-        fixed,
+        improved,
+        remainingPointIds,
         encouragement:
           parsed.encouragement ||
-          (fixed
-            ? 'Great job revising that part by yourself!'
-            : 'Good effort! Keep practicing one focus point at a time.'),
+          (remainingPointIds.length === 0
+            ? 'Great job! You improved your story by yourself.'
+            : 'Good changes! You can check the marked part one more time.'),
         nextLevel,
-        levelChangeReason,
       });
     } catch (error) {
-      console.error('Gemini revision check error, using local fallback:', error);
-      const fixed = changedTarget || revisedDraft.trim() !== firstDraft.trim();
-      const { nextLevel, levelChangeReason } = computeNextLevel(fixed);
-      res.json({
-        fixed,
-        encouragement: fixed
-          ? 'Nice revision! You updated the story by yourself.'
-          : 'Your draft is saved. Try editing the highlighted part next time.',
-        nextLevel,
-        levelChangeReason,
-      });
+      console.error('Gemini check-again error, using local comparison:', error);
+      res.json(localCheck());
     }
   });
 
@@ -550,6 +601,16 @@ async function createApp() {
       return;
     }
 
+    const safeFeedbackPoints: SavedFeedbackPointPayload[] = Array.isArray(body.feedbackPoints)
+      ? body.feedbackPoints.slice(0, 3).map((pt) => ({
+          category: typeof pt?.category === 'string' ? pt.category.slice(0, 60) : 'Feedback',
+          summaryTag: typeof pt?.summaryTag === 'string' ? pt.summaryTag.slice(0, 80) : 'Writing tip',
+          yourSentence: typeof pt?.yourSentence === 'string' ? pt.yourSentence.slice(0, 400) : '',
+          thinkAbout: typeof pt?.thinkAbout === 'string' ? pt.thinkAbout.slice(0, 300) : '',
+          question: typeof pt?.question === 'string' ? pt.question.slice(0, 300) : '',
+        }))
+      : [];
+
     const record: StoryRecordPayload = {
       id: typeof body.id === 'string' && body.id ? body.id.slice(0, 64) : crypto.randomUUID(),
       studentId: body.studentId.trim().slice(0, 80),
@@ -558,15 +619,18 @@ async function createApp() {
       topicId: typeof body.topicId === 'string' ? body.topicId.slice(0, 80) : 'rainy-day-surprise',
       topicTitle: typeof body.topicTitle === 'string' ? body.topicTitle.slice(0, 120) : 'Story',
       supportLevel: body.supportLevel === 1 || body.supportLevel === 3 ? body.supportLevel : 2,
-      hintsUsed: typeof body.hintsUsed === 'number' ? Math.max(0, Math.min(10, body.hintsUsed)) : 1,
-      maxHintLevel: body.maxHintLevel === 2 || body.maxHintLevel === 3 ? body.maxHintLevel : 1,
+      feedbackCount:
+        typeof body.feedbackCount === 'number'
+          ? Math.max(0, Math.min(3, body.feedbackCount))
+          : safeFeedbackPoints.length,
+      feedbackPoints: safeFeedbackPoints,
       firstDraft: body.firstDraft.slice(0, 4000),
       finalDraft: body.finalDraft.slice(0, 4000),
       reflectionNote: typeof body.reflectionNote === 'string' ? body.reflectionNote.slice(0, 1000) : '',
       aiHelpSummary: typeof body.aiHelpSummary === 'string' ? body.aiHelpSummary.slice(0, 240) : '',
-      feedbackFocus: typeof body.feedbackFocus === 'string' ? body.feedbackFocus.slice(0, 160) : '',
       whyOpened: Boolean(body.whyOpened),
       koreanHelpUsed: Boolean(body.koreanHelpUsed),
+      checkAgainUsed: Boolean(body.checkAgainUsed),
     };
 
     saveRecord(record);

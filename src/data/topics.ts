@@ -5,69 +5,80 @@ export const TOPIC_SCENES: TopicScene[] = [
     id: 'rainy-day-surprise',
     scenarioNumber: 1,
     title: 'A Rainy Day Surprise',
-    subtitle: 'Scenario 1 · An unexpected offer at the bus stop',
+    subtitle: 'Scenario 1 · Waiting for the bus in the rain',
     beginning: 'You are waiting for a bus after school.',
     problem: 'It suddenly starts raining, but you do not have an umbrella.',
     endingIdea: 'Someone you do not know offers to help you.',
     imageUrl: '/src/assets/images/scene_rainy_bus_stop_1795742006370.jpg',
     imageAlt:
-      'A high school student standing at a city bus stop in the rain while another student offers to share a bright yellow umbrella.',
+      'A student standing at a city bus stop in the rain while another student offers to share a bright yellow umbrella.',
     scenePromptQuestion:
-      'Imagine the details of this moment in your own way. Who offered help, what did you talk about, and how did it end?',
+      'Look at the picture and imagine your own story. Who helped you, what did you say, and how did it end?',
     level1Frames: [
-      'Yesterday, I was waiting for ___ when ___.',
-      'I did not have ___, so I felt ___.',
-      'Then, someone came and ___.',
-      'After that, we ___ while we waited.',
-      'Finally, ___ and I felt ___.',
+      'First, I was at ___.',
+      'Then, it started to rain, and I did not have ___.',
+      'Next, someone came and ___.',
+      'I felt ___ because ___.',
+      'Finally, ___.',
     ],
     level2Keywords: {
       questions: [
-        'Who was at the bus stop?',
-        'Where did it happen?',
-        'What happened when the rain started?',
-        'What happened next and how did it end?',
+        'Who?',
+        'Where?',
+        'What happened next?',
+        'How did you feel?',
       ],
       vocabulary: [
         'bus stop',
-        'suddenly',
+        'rain',
         'umbrella',
         'share',
         'surprised',
-        'grateful',
+        'kind',
         'waited',
         'thanked',
       ],
     },
-    level3Connectors: ['First', 'Then', 'After that', 'While', 'Because', 'So', 'Finally'],
+    level3Connectors: ['first', 'then', 'next', 'because', 'so', 'finally'],
     sampleParagraph:
-      'Yesterday, I was waiting for the bus after school when it suddenly started to rain. I did not have an umbrella, so I tried to stand under the bus stop sign. Then, another student came and shared her umbrella with me. At first, I felt surprised because we did not know each other. We talked about school while we waited for the bus. Finally, the bus arrived, and I thanked her for helping me. It was a small but kind surprise on a rainy day.',
-    fallbackHint: {
-      focusCategory: 'Grammar · Past tense verbs',
-      targetSentence: '',
-      praise: 'You clearly described the main event and feeling at the rainy bus stop.',
-      fix: 'Look closely at the highlighted part in your story.',
-      explanation:
-        'Your story happens in the past, so matching your action verbs to past time helps readers follow.',
-      question: 'Which verb form do we usually use for an event that happened yesterday?',
-      whyExplanation:
-        'English verbs often change form when we talk about completed events in the past. Checking the main action verb makes the timeline clear.',
-      hint2:
-        'Look at the action verb in that part and check whether it shows past time.',
-      hint3Pattern: 'Past action + time connector',
-      hint3Example: 'Yesterday, I walked home. Then, my friend called me.',
-      koreanHelp: {
-        praise: '비 오는 정류장에서 일어난 핵심 사건과 감정을 분명하게 담았어요.',
-        fix: '강조된 부분의 동사 표현을 한 번 더 살펴보세요.',
-        explanation:
-          '이야기가 이미 지난 과거의 일이므로, 동사가 과거 시제에 맞으면 흐름이 훨씬 자연스러워져요.',
-        question: '어제 일어난 일을 말할 때 보통 어떤 동사 형태를 쓰는지 떠올려 볼까요?',
-        whyExplanation:
-          '영어에서는 이미 끝난 과거의 일을 말할 때 동사의 형태가 바뀝니다. 행동을 나타내는 동사를 확인하면 시간 흐름이 분명해집니다.',
-        hint1: '노란색으로 표시된 부분에서 시간이나 시제를 나타내는 단어를 찾아보세요.',
-        hint2: '해당 문장의 핵심 동사가 과거 시제에 맞는지 확인해 보세요.',
-        hint3: '위 예문처럼 과거 시제 동사와 연결어(Then 등)가 함께 쓰이는 패턴을 참고해 보세요.',
-      },
+      'Yesterday, I waited for the bus after school. Suddenly, it started to rain, but I did not have an umbrella. I felt worried because I was getting wet. Then, another student came to the bus stop and shared her yellow umbrella with me. I was surprised and happy because she was very kind. We talked while we waited for the bus. Finally, the bus came, and I thanked her.',
+    fallbackFeedback: {
+      goodPoint: 'You showed the main event and your feeling clearly.',
+      goodPointKorean: '비 오는 날의 중심 사건과 자신의 감정을 잘 표현했어요.',
+      feedbackPoints: [
+        {
+          id: 'fb-1',
+          category: 'Grammar',
+          summaryTag: 'Check past tense',
+          yourSentence: '',
+          thinkAbout: 'This story happened in the past. Check the verb in this sentence.',
+          question: 'This happened yesterday. What past form of the verb do you need?',
+          whyExplanation:
+            'We often change verbs when we talk about past events. This helps the reader know when the action happened.',
+          koreanHelp: {
+            thinkAbout: '이미 일어난 이야기이므로 동사의 과거형을 확인해 보세요.',
+            question: '어제 일어난 일이라면 동사를 어떤 과거 형태로 써야 할까요?',
+            whyExplanation:
+              '이미 지난 일을 말할 때 동사를 과거형으로 바꾸면 독자가 언제 일어난 일인지 쉽게 알 수 있어요.',
+          },
+        },
+        {
+          id: 'fb-2',
+          category: 'Sentence Connection',
+          summaryTag: 'Connect story order',
+          yourSentence: '',
+          thinkAbout: 'Check how this sentence connects to the event before it.',
+          question: 'Can you add a word like "then", "next", or "because" here?',
+          whyExplanation:
+            'Connecting words show the order of events. They make your story easy to read.',
+          koreanHelp: {
+            thinkAbout: '앞 문장과 이 문장이 자연스럽게 이어지는지 확인해 보세요.',
+            question: '"then", "next", "because" 같은 연결어를 넣어 볼 수 있을까요?',
+            whyExplanation:
+              '연결어를 쓰면 사건의 순서나 이유가 잘 드러나서 이야기를 읽기 쉬워져요.',
+          },
+        },
+      ],
       isUncertain: false,
       usedFallback: true,
     },
@@ -76,69 +87,80 @@ export const TOPIC_SCENES: TopicScene[] = [
     id: 'the-lost-wallet',
     scenarioNumber: 2,
     title: 'The Lost Wallet',
-    subtitle: 'Scenario 2 · A choice outside a neighborhood café',
+    subtitle: 'Scenario 2 · Finding a wallet near a café',
     beginning: 'You find a wallet near a café.',
     problem: 'You do not know who the owner is.',
     endingIdea: 'You have to decide what to do next.',
     imageUrl: '/src/assets/images/scene_lost_wallet_1795744794586.jpg',
     imageAlt:
-      'A high school student standing outside a warm brick neighborhood café looking at a brown wallet lying near an outdoor table.',
+      'A student standing outside a neighborhood café looking at a brown wallet on the sidewalk.',
     scenePromptQuestion:
-      'Create your own story from this moment. Where were you going, what did you decide to do with the wallet, and how did it turn out?',
+      'Think about your own story. Where were you going, what did you decide to do, and how did it end?',
     level1Frames: [
-      'After school, I was walking near ___ when I saw ___.',
-      'I picked it up and realized ___.',
-      'At first, I felt ___ because ___.',
-      'Then, I decided to ___.',
-      'In the end, ___ and I felt ___.',
+      'First, I was walking near ___.',
+      'Then, I saw a ___ on the ground.',
+      'I felt ___ because ___.',
+      'Next, I decided to ___.',
+      'Finally, ___.',
     ],
     level2Keywords: {
       questions: [
-        'Who found the wallet?',
-        'Where near the café was it?',
-        'What was the problem when you checked?',
-        'What did you decide to do next and how did it end?',
+        'Who?',
+        'Where?',
+        'What happened next?',
+        'How did you feel?',
       ],
       vocabulary: [
-        'sidewalk',
+        'café',
         'wallet',
         'owner',
-        'café staff',
+        'looked around',
         'worried',
         'decided',
-        'returned',
-        'relieved',
+        'gave back',
+        'happy',
       ],
     },
-    level3Connectors: ['First', 'Then', 'After that', 'Because', 'So', 'Meanwhile', 'Finally'],
+    level3Connectors: ['first', 'then', 'next', 'because', 'so', 'finally'],
     sampleParagraph:
-      'Yesterday afternoon, I was walking past a quiet café on my way home when I noticed a brown wallet on the sidewalk. I looked around carefully, but nobody was sitting at the outdoor tables. At first, I felt unsure because I did not know who the owner was. Then, I decided to take the wallet inside the café and ask the staff to keep it safe. While I was writing down my contact note, a worried customer hurried back through the door looking for his wallet. Finally, the staff handed it back to him, and seeing his relieved smile made my afternoon feel special.',
-    fallbackHint: {
-      focusCategory: 'Sentence connection · Reason and decision',
-      targetSentence: '',
-      praise: 'You explained what happened when you found the wallet near the café.',
-      fix: 'Look closely at the highlighted sentence about your decision.',
-      explanation:
-        'Using a clear reason or result word helps readers understand why the character chose that action.',
-      question: 'Could you link the feeling and the decision using "because" or "so"?',
-      whyExplanation:
-        'Reason and result connectors show how one event leads to a choice. Without them, two actions can feel disconnected.',
-      hint2:
-        'Ask why the character made that choice, and check which connector joins cause and action.',
-      hint3Pattern: 'Feeling/Problem + connector + decision',
-      hint3Example: 'The library was closed, so I studied at a quiet table outside.',
-      koreanHelp: {
-        praise: '카페 앞에서 지갑을 발견한 상황을 분명하게 잘 썼어요.',
-        fix: '강조된 부분에서 인물의 결정이 어떻게 이어지는지 살펴보세요.',
-        explanation:
-          '이유나 결과를 나타내는 연결어를 쓰면 인물이 왜 그런 선택을 했는지 독자가 쉽게 이해할 수 있어요.',
-        question: '"because"나 "so"를 써서 감정과 행동을 자연스럽게 이어 볼 수 있을까요?',
-        whyExplanation:
-          '이유와 결과를 잇는 연결어는 사건이 어떻게 선택으로 이어지는지 보여 줍니다. 연결어가 없으면 문장들이 따로 떨어져 보일 수 있습니다.',
-        hint1: '강조된 문장에서 원인과 결과가 이어지는 부분을 살펴보세요.',
-        hint2: '왜 그런 결정을 내렸는지 생각하며 알맞은 연결어를 골라 보세요.',
-        hint3: '예문에서 "so"가 앞의 문제와 뒤의 행동을 어떻게 이어 주는지 참고해 보세요.',
-      },
+      'Yesterday, I walked past a café after school. Suddenly, I saw a brown wallet near a table. I picked it up, but I did not know the owner. First, I felt worried because someone lost it. Next, I went inside the café and gave the wallet to the worker. A few minutes later, a man came back looking for it. Finally, he got his wallet back, and I felt proud.',
+    fallbackFeedback: {
+      goodPoint: 'You clearly told what you found near the café.',
+      goodPointKorean: '카페 근처에서 지갑을 발견한 상황을 분명하게 썼어요.',
+      feedbackPoints: [
+        {
+          id: 'fb-1',
+          category: 'Grammar',
+          summaryTag: 'Check past tense',
+          yourSentence: '',
+          thinkAbout: 'This story happened in the past. Check the verb in this sentence.',
+          question: 'What is the past form of this action verb?',
+          whyExplanation:
+            'Using past tense verbs shows that the story already happened. This keeps the time clear.',
+          koreanHelp: {
+            thinkAbout: '이미 일어난 이야기이므로 동사의 과거형을 확인해 보세요.',
+            question: '이 행동을 나타내는 동사의 과거형은 무엇일까요?',
+            whyExplanation:
+              '과거형 동사를 쓰면 이야기가 이미 일어난 일임을 독자가 분명하게 알 수 있어요.',
+          },
+        },
+        {
+          id: 'fb-2',
+          category: 'Missing Information',
+          summaryTag: 'Add feeling or reason',
+          yourSentence: '',
+          thinkAbout: 'Tell the reader why you made this choice.',
+          question: 'How did you feel, and why did you decide to do that?',
+          whyExplanation:
+            'Sharing your feeling or reason helps the reader understand your story better.',
+          koreanHelp: {
+            thinkAbout: '왜 그런 선택을 했는지 이유나 느낌을 조금 더 적어 보세요.',
+            question: '그때 어떤 기분이었고 왜 그렇게 행동하기로 했나요?',
+            whyExplanation:
+              '인물의 기분이나 이유를 함께 쓰면 독자가 이야기에 더 쉽게 공감할 수 있어요.',
+          },
+        },
+      ],
       isUncertain: false,
       usedFallback: true,
     },
@@ -147,69 +169,80 @@ export const TOPIC_SCENES: TopicScene[] = [
     id: 'a-new-student',
     scenarioNumber: 3,
     title: 'A New Student',
-    subtitle: 'Scenario 3 · First morning in a high school classroom',
+    subtitle: 'Scenario 3 · A nervous classmate on the first morning',
     beginning: 'A new student joins your class.',
     problem: 'The student looks nervous and sits alone.',
     endingIdea: 'You decide whether and how to talk to the student.',
     imageUrl: '/src/assets/images/scene_new_student_1795744794217.jpg',
     imageAlt:
-      'Inside a sunlit Korean high school classroom before class, a new student sits nervously alone near the window while a classmate looks over kindly.',
+      'Inside a bright school classroom, a new student sits alone near the window while a classmate looks over kindly.',
     scenePromptQuestion:
-      'Shape the story your own way. What did you notice about the new student, what did you decide to do, and what happened afterward?',
+      'Create your own story. How did the new student look, what did you decide to do, and what happened next?',
     level1Frames: [
-      'This morning, a new student came to ___.',
-      'The student looked ___, and nobody ___.',
-      'I felt ___ because I remembered ___.',
-      'Then, I decided to ___ and said ___.',
-      'Finally, we ___ and the classroom felt ___.',
+      'First, a new student came to ___.',
+      'The student sat ___ and looked ___.',
+      'I felt ___ because ___.',
+      'Then, I walked over and ___.',
+      'Finally, ___.',
     ],
     level2Keywords: {
       questions: [
-        'Who is the new student in your story?',
-        'Where in the classroom did they sit?',
-        'How did they look and what did you decide?',
-        'What happened after you talked, and how did it end?',
+        'Who?',
+        'Where?',
+        'What happened next?',
+        'How did you feel?',
       ],
       vocabulary: [
         'classroom',
-        'nervous',
+        'new student',
         'alone',
-        'walked over',
-        'introduced',
+        'nervous',
         'smiled',
-        'comfortable',
+        'said hello',
+        'talked',
         'friendly',
       ],
     },
-    level3Connectors: ['First', 'At first', 'Then', 'After that', 'Because', 'So', 'Finally'],
+    level3Connectors: ['first', 'then', 'next', 'because', 'so', 'finally'],
     sampleParagraph:
-      'On Monday morning, a new student joined our class right before homeroom. She sat alone at a desk near the window and looked nervous while everyone else talked with their friends. At first, I felt shy because I did not know what to say. Then, I remembered my own first day at a new school, so I picked up my notebook and walked over to her desk. I introduced myself and asked if she wanted to walk to the cafeteria together at lunch. Finally, she smiled with relief, and we spent the break talking about our favorite music.',
-    fallbackHint: {
-      focusCategory: 'Story organization · Sequence of events',
-      targetSentence: '',
-      praise: 'You showed real empathy and clear details about the classroom scene.',
-      fix: 'Look closely at the highlighted part showing what happened next.',
-      explanation:
-        'Adding clear time words helps the reader follow the change from nervous silence to conversation.',
-      question: 'Which sequence word like First, At first, Then, or Finally fits this moment?',
-      whyExplanation:
-        'Sequence markers guide the reader step by step through how a character notices a problem and takes action.',
-      hint2:
-        'Check the order between noticing the student and deciding to speak, and match the verb tense.',
-      hint3Pattern: 'Time marker + past-tense action',
-      hint3Example: 'At first, I felt shy. Then, I smiled and offered him a seat.',
-      koreanHelp: {
-        praise: '교실 상황과 인물의 감정에 대한 공감이 아주 잘 드러났어요.',
-        fix: '강조된 부분에서 사건이 이어지는 순서를 살펴보세요.',
-        explanation:
-          '시간 순서 표현을 넣으면 긴장된 분위기에서 대화가 시작되는 변화를 독자가 쉽게 따라갈 수 있어요.',
-        question: 'First, At first, Then, Finally 중 이곳의 흐름에 어울리는 표현은 무엇일까요?',
-        whyExplanation:
-          '순서 연결어는 인물이 문제를 발견하고 행동으로 옮기는 과정을 단계별로 보여 줍니다.',
-        hint1: '강조된 부분 앞뒤의 사건이 어떤 순서로 일어나는지 확인해 보세요.',
-        hint2: '학생을 본 순간과 말을 걸기로 한 순간의 순서 및 과거 시제를 살펴보세요.',
-        hint3: '예문에서 "At first"와 "Then"이 감정의 변화를 어떻게 연결하는지 참고해 보세요.',
-      },
+      'This morning, a new student joined my class. He sat alone near the window and looked very nervous. I felt sorry for him because it was his first day. Then, I walked over to his desk and said hello. I asked his name and showed him where the cafeteria was. Next, he smiled and talked with me. Finally, we ate lunch together, and he looked much happier.',
+    fallbackFeedback: {
+      goodPoint: 'You noticed the new student’s feeling in the classroom.',
+      goodPointKorean: '교실에 온 새 친구의 기분을 잘 살펴서 표현했어요.',
+      feedbackPoints: [
+        {
+          id: 'fb-1',
+          category: 'Sentence Form',
+          summaryTag: 'Check be verb with adjectives',
+          yourSentence: '',
+          thinkAbout: 'Words like "nervous" or "happy" are adjectives. Check what word you need before an adjective.',
+          question: 'The story happened in the past. What be verb can you use here?',
+          whyExplanation:
+            'In English, we use a be verb before an adjective to make a complete sentence.',
+          koreanHelp: {
+            thinkAbout: '"nervous"나 "happy" 같은 형용사 앞에는 be동사가 필요한지 확인해 보세요.',
+            question: '과거의 상태나 기분을 말할 때 어떤 be동사를 쓸 수 있을까요?',
+            whyExplanation:
+              '영어에서는 형용사로 문장을 만들 때 앞에 알맞은 be동사를 함께 써야 문장이 완성돼요.',
+          },
+        },
+        {
+          id: 'fb-2',
+          category: 'Story Order',
+          summaryTag: 'Show what happened next',
+          yourSentence: '',
+          thinkAbout: 'Show the order between seeing the student and talking to them.',
+          question: 'Can you use "first", "then", or "finally" to show the order?',
+          whyExplanation:
+            'Order words help the reader follow each step of your story from start to finish.',
+          koreanHelp: {
+            thinkAbout: '친구를 본 뒤 어떤 순서로 행동했는지 시간 연결어를 확인해 보세요.',
+            question: '"first", "then", "finally" 중 알맞은 순서 표현을 넣을 수 있을까요?',
+            whyExplanation:
+              '순서를 나타내는 말을 넣으면 이야기의 흐름을 처음부터 끝까지 쉽게 따라갈 수 있어요.',
+          },
+        },
+      ],
       isUncertain: false,
       usedFallback: true,
     },

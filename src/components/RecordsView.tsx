@@ -53,14 +53,20 @@ export function RecordsView({
             No saved stories yet
           </h2>
           <p className="text-sm text-slate-600 max-w-md mx-auto">
-            Complete all 5 steps for any picture scene and press “Save to My Records” on the final
-            screen to keep your Before and After drafts here.
+            Finish a story and press “Save to My Records” to keep your Before and After drafts here.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {records.map((rec) => {
             const isOpen = expandedId === rec.id;
+            const feedbackCount =
+              typeof rec.feedbackCount === 'number'
+                ? rec.feedbackCount
+                : Array.isArray(rec.feedbackPoints)
+                ? rec.feedbackPoints.length
+                : 0;
+
             return (
               <article
                 key={rec.id}
@@ -81,7 +87,7 @@ export function RecordsView({
                       <span>Level {rec.supportLevel}</span>
                       <span aria-hidden="true">·</span>
                       <span>
-                        {rec.hintsUsed} {rec.hintsUsed === 1 ? 'hint' : 'hints'}
+                        {feedbackCount} {feedbackCount === 1 ? 'feedback point' : 'feedback points'}
                       </span>
                     </div>
                   </div>
@@ -109,27 +115,33 @@ export function RecordsView({
                       </div>
                     </div>
 
+                    {Array.isArray(rec.feedbackPoints) && rec.feedbackPoints.length > 0 && (
+                      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                        <p className="font-bold text-slate-700">AI Feedback Points</p>
+                        <ul className="space-y-1 text-slate-600">
+                          {rec.feedbackPoints.map((pt, i) => (
+                            <li key={i}>
+                              <span className="font-semibold text-slate-800">{pt.category}:</span>{' '}
+                              {pt.summaryTag}
+                              {pt.yourSentence ? ` (“${pt.yourSentence}”)` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <p className="font-bold text-slate-700 mb-1">What I changed</p>
+                        <p className="font-bold text-slate-700 mb-1">Student Reflection</p>
                         <p>{rec.reflectionNote || 'No reflection note added.'}</p>
                       </div>
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                        <p className="font-bold text-slate-700">AI helped me with</p>
-                        <p>{rec.aiHelpSummary || `Level ${rec.supportLevel} · ${rec.hintsUsed} hint(s)`}</p>
-                        {rec.feedbackFocus && (
-                          <p className="text-slate-500">Focus: {rec.feedbackFocus}</p>
-                        )}
-                        {typeof rec.whyOpened === 'boolean' && (
-                          <p className="text-slate-500">
-                            Opened “Why?”: {rec.whyOpened ? 'Yes' : 'No'}
-                          </p>
-                        )}
-                        {typeof rec.koreanHelpUsed === 'boolean' && (
-                          <p className="text-slate-500">
-                            Korean Help: {rec.koreanHelpUsed ? 'ON' : 'OFF'}
-                          </p>
-                        )}
+                        <p className="font-bold text-slate-700">Writing Support Details</p>
+                        <p>
+                          Why?: {rec.whyOpened ? 'Yes' : 'No'} · Korean Help:{' '}
+                          {rec.koreanHelpUsed ? 'ON' : 'OFF'} · Check Again:{' '}
+                          {rec.checkAgainUsed ? 'Yes' : 'No'}
+                        </p>
                       </div>
                     </div>
                   </div>

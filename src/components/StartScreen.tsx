@@ -17,9 +17,9 @@ interface StartScreenProps {
 }
 
 const LEVEL_DESCRIPTIONS: Record<SupportLevel, string> = {
-  1: 'Level 1 · Sentence frames guide each part of your story.',
-  2: 'Level 2 · Keywords and questions help organize your ideas.',
-  3: 'Level 3 · Free writing with connector suggestions only.',
+  1: 'Level 1 (More Support) · Sentence frames help you write each part.',
+  2: 'Level 2 (Some Support) · Keywords and short questions guide your story.',
+  3: 'Level 3 (Less Support) · Free writing with connector words only.',
 };
 
 export function StartScreen({
@@ -44,14 +44,14 @@ export function StartScreen({
         <div className="lg:col-span-6 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
             <p className="text-xs font-medium text-slate-500 tabular-nums">
-              CEFR B1 Story Workshop · 5 Guided Steps · Coach Pic
+              CEFR A2 Story Workshop · Middle School Grade 1 · Coach Pic
             </p>
             <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 leading-tight">
-              Turn one scene into your own English story.
+              Turn a short scene into your own story.
             </h1>
             <p className="text-base text-slate-600 leading-relaxed max-w-xl">
-              Observe a picture, write 6–8 sentences, receive one focused question from Coach Pic,
-              and improve the writing yourself.
+              Choose a scenario, plan your ideas, write a short story, and get 1–3 simple tips from
+              Coach Pic to fix your writing yourself.
             </p>
           </div>
 
@@ -131,7 +131,7 @@ export function StartScreen({
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span>Selected Scenario · Scenario {activeTopic.scenarioNumber}</span>
-              <span className="font-mono tabular-nums">Target · 6–8 sentences</span>
+              <span className="font-mono tabular-nums">CEFR A2 · 5–7 sentences</span>
             </div>
             <SceneImage
               src={activeTopic.imageUrl}

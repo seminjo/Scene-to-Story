@@ -1,6 +1,14 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Languages, ShieldAlert } from 'lucide-react';
-import type { CoachFeedback, HintLevel } from '../types/story';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Languages,
+  RefreshCw,
+  ShieldAlert,
+} from 'lucide-react';
+import type { CoachFeedback } from '../types/story';
 import { checkPrivacy, countSentences, countWords } from '../utils/privacyCheck';
 
 interface Step4RewriteProps {
@@ -8,9 +16,12 @@ interface Step4RewriteProps {
   revisedDraft: string;
   onChangeRevisedDraft: (next: string) => void;
   feedback: CoachFeedback | null;
-  hintLevel: HintLevel;
   koreanHelpEnabled: boolean;
   onToggleKoreanHelp: () => void;
+  isCheckingAgain: boolean;
+  onBackToFeedback: () => void;
+  onCheckAgain: () => void;
+  onFinishWriting: () => void;
 }
 
 export function Step4Rewrite({
@@ -18,27 +29,31 @@ export function Step4Rewrite({
   revisedDraft,
   onChangeRevisedDraft,
   feedback,
-  hintLevel,
   koreanHelpEnabled,
   onToggleKoreanHelp,
+  isCheckingAgain,
+  onBackToFeedback,
+  onCheckAgain,
+  onFinishWriting,
 }: Step4RewriteProps) {
   const [showOriginal, setShowOriginal] = useState(false);
   const privacy = checkPrivacy(revisedDraft);
   const sentences = countSentences(revisedDraft);
   const words = countWords(revisedDraft);
+  const disableSubmit = !revisedDraft.trim() || privacy.hasPII || isCheckingAgain;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-      {/* Coach Reminder Banner (Highlight + Question + remembered Korean Help ON/OFF) */}
+      {/* Small Summary of Feedback Cards */}
       {feedback && (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-            <span>Step 4 · Rewrite by Yourself · Hint {hintLevel}</span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-lg font-bold text-slate-900">Your Feedback</h2>
             <button
               type="button"
               aria-pressed={koreanHelpEnabled}
               onClick={onToggleKoreanHelp}
-              className={`min-h-[36px] px-3 py-1 text-xs font-semibold rounded-lg border flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+              className={`min-h-[38px] px-3 py-1.5 text-xs font-semibold rounded-lg border flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                 koreanHelpEnabled
                   ? 'bg-blue-600 border-blue-600 text-white'
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -49,38 +64,25 @@ export function Step4Rewrite({
             </button>
           </div>
 
-          {feedback.targetSentence && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
-              <p className="text-xs font-semibold text-amber-900">Highlighted focus part</p>
-              <p className="text-sm text-slate-900 font-medium">“{feedback.targetSentence}”</p>
-              {koreanHelpEnabled && (
-                <p className="text-xs text-amber-900/80 pt-1 border-t border-amber-200/70">
-                  {feedback.koreanHelp.hint1}
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <p className="text-xs font-bold text-blue-800">Coach Pic’s Question</p>
-            <p className="text-sm text-slate-900 font-medium">{feedback.question}</p>
-            {koreanHelpEnabled && (
-              <p className="text-xs text-blue-900/80">{feedback.koreanHelp.question}</p>
-            )}
-
-            {hintLevel >= 2 && (
-              <div className="pt-1.5 space-y-0.5 text-xs text-slate-600">
-                <p>Hint 2: {feedback.hint2}</p>
-                {koreanHelpEnabled && <p className="text-slate-500">{feedback.koreanHelp.hint2}</p>}
-              </div>
-            )}
-            {hintLevel >= 3 && (
-              <div className="pt-1 space-y-0.5 text-xs text-slate-600">
-                <p>Hint 3 pattern: “{feedback.hint3Example}”</p>
-                {koreanHelpEnabled && <p className="text-slate-500">{feedback.koreanHelp.hint3}</p>}
-              </div>
-            )}
-          </div>
+          <ul className="space-y-2 text-sm">
+            {feedback.feedbackPoints.map((pt, idx) => (
+              <li
+                key={pt.id}
+                className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold text-slate-900">
+                    {idx + 1}. {pt.summaryTag}
+                  </span>
+                  <span className="text-xs text-slate-500">“{pt.yourSentence}”</span>
+                </div>
+                <p className="text-xs text-slate-600">{pt.question}</p>
+                {koreanHelpEnabled && (
+                  <p className="text-xs text-blue-800">{pt.koreanHelp.thinkAbout}</p>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -88,13 +90,17 @@ export function Step4Rewrite({
       <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="font-display text-2xl font-bold text-slate-900">
-            Revise your story
+            Rewrite your story
           </h1>
           <span className="text-xs font-mono tabular-nums text-slate-500">
             {sentences} {sentences === 1 ? 'sentence' : 'sentences'} · {words}{' '}
             {words === 1 ? 'word' : 'words'}
           </span>
         </div>
+
+        <p className="text-sm text-slate-600">
+          Fix your story by yourself using the feedback above.
+        </p>
 
         {privacy.hasPII && (
           <div
@@ -136,6 +142,45 @@ export function Step4Rewrite({
               {firstDraft}
             </div>
           )}
+        </div>
+
+        {/* Action Buttons: Back + Primary (Check Again) + Secondary (Finish Writing) */}
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={onBackToFeedback}
+            className="min-h-[48px] px-4 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center gap-2 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>Back: AI Feedback</span>
+          </button>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <button
+              type="button"
+              disabled={disableSubmit}
+              onClick={onFinishWriting}
+              className="min-h-[48px] px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Finish Writing / 글쓰기 마치기</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={disableSubmit}
+              onClick={onCheckAgain}
+              className="min-h-[48px] px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-xl flex items-center justify-center gap-2 transition-colors"
+            >
+              <RefreshCw
+                className={`w-4 h-4 shrink-0 ${isCheckingAgain ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              <span>
+                {isCheckingAgain ? 'Checking...' : 'Check Again / 다시 확인하기'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

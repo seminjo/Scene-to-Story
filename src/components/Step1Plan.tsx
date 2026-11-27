@@ -75,7 +75,7 @@ export function Step1Plan({ topic, plan, onChangePlan }: Step1PlanProps) {
           <div className="space-y-1">
             <h1 className="font-display text-2xl font-bold text-slate-900">{topic.title}</h1>
             <p className="text-xs text-slate-500">
-              Use this scenario as a starting point—create your own details and ending.
+              This is only a starting idea. Write your own story details below.
             </p>
           </div>
           <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-700 md:max-w-2xl">
@@ -106,10 +106,10 @@ export function Step1Plan({ topic, plan, onChangePlan }: Step1PlanProps) {
         <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-5 space-y-5">
           <div className="space-y-1">
             <h2 className="font-display text-xl font-bold text-slate-900">
-              Plan your story ideas
+              Plan your story
             </h2>
             <p className="text-sm text-slate-600">
-              Jot down short notes for each question. Your notes stay with you in Step 2.
+              Write short words or phrases in English. (짧은 단어나 구로 먼저 정리해 보세요.)
             </p>
           </div>
 

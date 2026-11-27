@@ -12,9 +12,9 @@ interface TopBarProps {
 }
 
 const STEP_LABELS: { step: 1 | 2 | 3 | 4 | 5; short: string; full: string }[] = [
-  { step: 1, short: 'Plan', full: 'Observe & Plan' },
+  { step: 1, short: 'Plan', full: 'Plan' },
   { step: 2, short: 'Draft', full: 'Draft' },
-  { step: 3, short: 'Hint', full: 'Coach Hint' },
+  { step: 3, short: 'Feedback', full: 'AI Feedback' },
   { step: 4, short: 'Rewrite', full: 'Rewrite' },
   { step: 5, short: 'Finish', full: 'Finish' },
 ];
@@ -23,7 +23,7 @@ function getStepNumber(screen: AppScreen): number {
   if (screen === 'step1') return 1;
   if (screen === 'step2') return 2;
   if (screen === 'step3') return 3;
-  if (screen === 'step4') return 4;
+  if (screen === 'step4' || screen === 'checkAgain') return 4;
   if (screen === 'step5') return 5;
   return 0;
 }

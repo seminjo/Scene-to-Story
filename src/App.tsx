@@ -7,22 +7,22 @@ import { Step2Draft } from './components/Step2Draft';
 import { Step3Hint } from './components/Step3Hint';
 import { Step4Rewrite } from './components/Step4Rewrite';
 import { Step5Finish } from './components/Step5Finish';
+import { StepCheckAgain } from './components/StepCheckAgain';
 import { TeacherAuthModal } from './components/TeacherAuthModal';
 import { TeacherView } from './components/TeacherView';
 import { TopBar } from './components/TopBar';
 import { TOPIC_SCENES } from './data/topics';
 import type {
   AppScreen,
+  CheckAgainResult,
   CoachFeedback,
-  HintLevel,
-  RevisionCheckResult,
   StoryRecord,
   SupportLevel,
   WritingPlan,
 } from './types/story';
 import { checkPrivacy } from './utils/privacyCheck';
 
-const STORAGE_KEY = 'scene_to_story_workspace_v1';
+const STORAGE_KEY = 'scene_to_story_workspace_v2';
 const STUDENT_ID_KEY = 'scene_to_story_student_id_v1';
 
 interface SavedWorkspace {
@@ -84,14 +84,14 @@ export default function App() {
   const [reflectionNote, setReflectionNote] = useState<string>(initial.reflectionNote ?? '');
 
   const [feedback, setFeedback] = useState<CoachFeedback | null>(null);
-  const [hintLevel, setHintLevel] = useState<HintLevel>(1);
   const [whyOpened, setWhyOpened] = useState(false);
   const [koreanHelpEnabled, setKoreanHelpEnabled] = useState<boolean>(
     initial.koreanHelpEnabled ?? false
   );
   const [isLoadingHint, setIsLoadingHint] = useState(false);
-  const [isCheckingRevision, setIsCheckingRevision] = useState(false);
-  const [revisionCheck, setRevisionCheck] = useState<RevisionCheckResult | null>(null);
+  const [isCheckingAgain, setIsCheckingAgain] = useState(false);
+  const [checkAgainUsed, setCheckAgainUsed] = useState(false);
+  const [checkAgainResult, setCheckAgainResult] = useState<CheckAgainResult | null>(null);
   const [maxReachedStep, setMaxReachedStep] = useState<number>(1);
 
   const [myRecords, setMyRecords] = useState<StoryRecord[]>([]);
@@ -165,9 +165,9 @@ export default function App() {
     setRevisedDraft('');
     setReflectionNote('');
     setFeedback(null);
-    setHintLevel(1);
     setWhyOpened(false);
-    setRevisionCheck(null);
+    setCheckAgainUsed(false);
+    setCheckAgainResult(null);
     setHasSavedCurrent(false);
     setSaveError('');
     setMaxReachedStep(1);
@@ -180,7 +180,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const requestCoachHint = async () => {
+  const requestCoachFeedback = async () => {
     const privacy = checkPrivacy(firstDraft);
     if (privacy.hasPII) return;
 
@@ -200,12 +200,13 @@ export default function App() {
         }),
       });
       if (!res.ok) {
-        throw new Error('Hint request failed');
+        throw new Error('Feedback request failed');
       }
       const data = await res.json();
       setFeedback(data.feedback);
-      setHintLevel(1);
       setWhyOpened(false);
+      setCheckAgainUsed(false);
+      setCheckAgainResult(null);
       if (!revisedDraft.trim()) {
         setRevisedDraft(firstDraft);
       }
@@ -214,12 +215,17 @@ export default function App() {
         .split(/(?<=[.!?])\s+|\n+/)
         .map((s) => s.trim())
         .filter(Boolean);
+      const fallbackPts = activeTopic.fallbackFeedback.feedbackPoints.map((pt, idx) => ({
+        ...pt,
+        yourSentence: sentences[Math.min(idx, Math.max(0, sentences.length - 1))] || firstDraft.trim(),
+      }));
       setFeedback({
-        ...activeTopic.fallbackHint,
-        targetSentence: sentences[Math.min(1, Math.max(0, sentences.length - 1))] || firstDraft.trim(),
+        ...activeTopic.fallbackFeedback,
+        feedbackPoints: fallbackPts,
       });
-      setHintLevel(1);
       setWhyOpened(false);
+      setCheckAgainUsed(false);
+      setCheckAgainResult(null);
       if (!revisedDraft.trim()) {
         setRevisedDraft(firstDraft);
       }
@@ -228,54 +234,61 @@ export default function App() {
     }
   };
 
-  const handleStep4Next = async () => {
+  const handleCheckAgain = async () => {
     const privacy = checkPrivacy(revisedDraft);
     if (privacy.hasPII) return;
 
-    setIsCheckingRevision(true);
+    setIsCheckingAgain(true);
+    setCheckAgainUsed(true);
     try {
-      const res = await fetch('/api/coach/check-revision', {
+      const res = await fetch('/api/coach/check-again', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           firstDraft,
           revisedDraft,
-          targetSentence: feedback?.targetSentence || '',
-          fixPoint: feedback?.fix || '',
+          feedbackPoints: feedback?.feedbackPoints ?? [],
           currentLevel: activeStoryLevel,
-          hintsUsed: hintLevel,
         }),
       });
       if (!res.ok) {
-        throw new Error('Revision check failed');
+        throw new Error('Check again failed');
       }
-      const result: RevisionCheckResult = await res.json();
-      setRevisionCheck(result);
-      setSupportLevel(result.nextLevel);
+      const result: CheckAgainResult = await res.json();
+      setCheckAgainResult(result);
     } catch {
       const changed = revisedDraft.trim() !== firstDraft.trim();
-      const nextLevel: SupportLevel =
-        changed && hintLevel === 1 && activeStoryLevel < 3
-          ? ((activeStoryLevel + 1) as SupportLevel)
-          : !changed && hintLevel >= 2 && activeStoryLevel > 1
-          ? ((activeStoryLevel - 1) as SupportLevel)
-          : activeStoryLevel;
-      setRevisionCheck({
-        fixed: changed,
+      const remainingIds =
+        feedback?.feedbackPoints
+          .filter((pt) => pt.yourSentence && revisedDraft.includes(pt.yourSentence))
+          .map((pt) => pt.id) ?? [];
+      setCheckAgainResult({
+        improved: changed
+          ? ['You updated your story in your own words.']
+          : [],
+        remainingPointIds: remainingIds,
         encouragement: changed
-          ? 'Nice job revising your story by yourself!'
-          : 'Your writing is ready to compare and reflect on.',
-        nextLevel,
-        levelChangeReason:
-          nextLevel > activeStoryLevel ? 'up' : nextLevel < activeStoryLevel ? 'down' : 'same',
+          ? 'Nice changes! Look below to see what you improved.'
+          : 'Your writing is safe. You can edit the marked part if you want.',
+        nextLevel:
+          remainingIds.length === 0 && changed && activeStoryLevel < 3
+            ? ((activeStoryLevel + 1) as SupportLevel)
+            : activeStoryLevel,
       });
-      setSupportLevel(nextLevel);
     } finally {
-      setIsCheckingRevision(false);
-      setScreen('step5');
-      setMaxReachedStep(5);
+      setIsCheckingAgain(false);
+      setScreen('checkAgain');
+      setMaxReachedStep((prev) => Math.max(prev, 4));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const handleFinishWriting = () => {
+    const privacy = checkPrivacy(revisedDraft);
+    if (privacy.hasPII) return;
+    setScreen('step5');
+    setMaxReachedStep(5);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSaveRecord = async () => {
@@ -289,9 +302,12 @@ export default function App() {
     }
 
     setIsSavingRecord(true);
-    const aiHelpSummary = `Support Level ${activeStoryLevel} · ${hintLevel} of 3 hint levels used · Why? ${
-      whyOpened ? 'opened' : 'not opened'
-    } · Korean Help ${koreanHelpEnabled ? 'ON' : 'OFF'}`;
+    const points = feedback?.feedbackPoints ?? [];
+    const aiHelpSummary = `Support Level ${activeStoryLevel} · ${points.length} feedback point(s) · Why? ${
+      whyOpened ? 'Yes' : 'No'
+    } · Korean Help ${koreanHelpEnabled ? 'ON' : 'OFF'} · Check Again ${
+      checkAgainUsed ? 'Yes' : 'No'
+    }`;
 
     const payload: StoryRecord = {
       id: `rec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
@@ -301,15 +317,21 @@ export default function App() {
       topicId: activeTopic.id,
       topicTitle: activeTopic.title,
       supportLevel: activeStoryLevel,
-      hintsUsed: hintLevel,
-      maxHintLevel: hintLevel,
+      feedbackCount: points.length,
+      feedbackPoints: points.map((pt) => ({
+        category: pt.category,
+        summaryTag: pt.summaryTag,
+        yourSentence: pt.yourSentence,
+        thinkAbout: pt.thinkAbout,
+        question: pt.question,
+      })),
       firstDraft: firstDraft.trim(),
       finalDraft: revisedDraft.trim(),
       reflectionNote: reflectionNote.trim(),
       aiHelpSummary,
-      feedbackFocus: feedback?.focusCategory || 'Meaning / clarity',
       whyOpened,
       koreanHelpUsed: koreanHelpEnabled,
+      checkAgainUsed,
     };
 
     try {
@@ -333,6 +355,8 @@ export default function App() {
   };
 
   const handleStartNextStory = () => {
+    const nextLevel = checkAgainResult?.nextLevel ?? supportLevel;
+    setSupportLevel(nextLevel);
     const currentIdx = TOPIC_SCENES.findIndex((t) => t.id === selectedTopicId);
     const nextTopic = TOPIC_SCENES[(currentIdx + 1) % TOPIC_SCENES.length];
     setSelectedTopicId(nextTopic.id);
@@ -341,13 +365,13 @@ export default function App() {
     setRevisedDraft('');
     setReflectionNote('');
     setFeedback(null);
-    setHintLevel(1);
     setWhyOpened(false);
-    setRevisionCheck(null);
+    setCheckAgainUsed(false);
+    setCheckAgainResult(null);
     setHasSavedCurrent(false);
     setSaveError('');
     setMaxReachedStep(1);
-    setActiveStoryLevel(supportLevel);
+    setActiveStoryLevel(nextLevel);
     setScreen('step1');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -384,13 +408,12 @@ export default function App() {
     `${plan.who} ${plan.where} ${plan.whatHappened} ${plan.howFelt} ${plan.whatNext} ${plan.howEnded}`
   ).hasPII;
   const step2HasPII = checkPrivacy(firstDraft).hasPII;
-  const step4HasPII = checkPrivacy(revisedDraft).hasPII;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <TopBar
         screen={screen}
-        supportLevel={screen.startsWith('step') ? activeStoryLevel : supportLevel}
+        supportLevel={screen.startsWith('step') || screen === 'checkAgain' ? activeStoryLevel : supportLevel}
         onGoHome={() => setScreen('start')}
         onGoRecords={() => {
           fetchMyRecords();
@@ -445,13 +468,10 @@ export default function App() {
             draft={firstDraft}
             feedback={feedback}
             isLoading={isLoadingHint}
-            hintLevel={hintLevel}
-            whyOpened={whyOpened}
             koreanHelpEnabled={koreanHelpEnabled}
             onToggleKoreanHelp={() => setKoreanHelpEnabled((prev) => !prev)}
             onOpenWhy={() => setWhyOpened(true)}
-            onUnlockHintLevel={(next) => setHintLevel(next)}
-            onRetryHint={requestCoachHint}
+            onRetryHint={requestCoachFeedback}
           />
         )}
 
@@ -461,9 +481,22 @@ export default function App() {
             revisedDraft={revisedDraft}
             onChangeRevisedDraft={setRevisedDraft}
             feedback={feedback}
-            hintLevel={hintLevel}
             koreanHelpEnabled={koreanHelpEnabled}
             onToggleKoreanHelp={() => setKoreanHelpEnabled((prev) => !prev)}
+            isCheckingAgain={isCheckingAgain}
+            onBackToFeedback={() => setScreen('step3')}
+            onCheckAgain={handleCheckAgain}
+            onFinishWriting={handleFinishWriting}
+          />
+        )}
+
+        {screen === 'checkAgain' && (
+          <StepCheckAgain
+            feedback={feedback}
+            checkResult={checkAgainResult}
+            koreanHelpEnabled={koreanHelpEnabled}
+            onToggleKoreanHelp={() => setKoreanHelpEnabled((prev) => !prev)}
+            onOpenWhy={() => setWhyOpened(true)}
           />
         )}
 
@@ -473,12 +506,10 @@ export default function App() {
             firstDraft={firstDraft}
             finalDraft={revisedDraft}
             supportLevelUsed={activeStoryLevel}
-            hintsUsed={hintLevel}
-            maxHintLevel={hintLevel}
-            feedbackFocus={feedback?.focusCategory || 'Meaning / clarity'}
+            feedbackPoints={feedback?.feedbackPoints ?? []}
             whyOpened={whyOpened}
             koreanHelpUsed={koreanHelpEnabled}
-            revisionCheck={revisionCheck}
+            checkAgainUsed={checkAgainUsed}
             reflectionNote={reflectionNote}
             onChangeReflectionNote={setReflectionNote}
             isSaving={isSavingRecord}
@@ -508,10 +539,10 @@ export default function App() {
         )}
       </main>
 
-      {/* Persistent Back / Next Bottom Bar for Steps 1-5 */}
+      {/* Bottom Navigation Bar */}
       {screen === 'step1' && (
         <BottomNav
-          backLabel="Start"
+          backLabel="Scenarios"
           nextLabel="Next: Draft"
           onBack={() => setScreen('start')}
           onNext={() => {
@@ -526,13 +557,13 @@ export default function App() {
       {screen === 'step2' && (
         <BottomNav
           backLabel="Back: Plan"
-          nextLabel="Next: Coach Hint"
+          nextLabel="Next: AI Feedback"
           onBack={() => setScreen('step1')}
           onNext={() => {
             if (feedback && revisedDraft) {
               setScreen('step3');
             } else {
-              requestCoachHint();
+              requestCoachFeedback();
             }
           }}
           nextDisabled={!firstDraft.trim() || step2HasPII}
@@ -556,14 +587,12 @@ export default function App() {
         />
       )}
 
-      {screen === 'step4' && (
+      {screen === 'checkAgain' && (
         <BottomNav
-          backLabel="Back: Hint"
-          nextLabel="Next: Finish"
-          onBack={() => setScreen('step3')}
-          onNext={handleStep4Next}
-          nextDisabled={!revisedDraft.trim() || step4HasPII}
-          isBusy={isCheckingRevision}
+          backLabel="Back: Edit Story"
+          nextLabel="Finish Writing"
+          onBack={() => setScreen('step4')}
+          onNext={handleFinishWriting}
         />
       )}
 

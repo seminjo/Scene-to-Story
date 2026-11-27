@@ -1,5 +1,4 @@
 export type SupportLevel = 1 | 2 | 3;
-export type HintLevel = 1 | 2 | 3;
 
 export type AppScreen =
   | 'start'
@@ -7,6 +6,7 @@ export type AppScreen =
   | 'step2'
   | 'step3'
   | 'step4'
+  | 'checkAgain'
   | 'step5'
   | 'records'
   | 'teacher';
@@ -29,7 +29,7 @@ export interface TopicScene {
   };
   level3Connectors: string[];
   sampleParagraph: string;
-  fallbackHint: CoachFeedback;
+  fallbackFeedback: CoachFeedback;
 }
 
 export interface WritingPlan {
@@ -41,36 +41,42 @@ export interface WritingPlan {
   howEnded: string;
 }
 
-export interface CoachFeedback {
-  focusCategory: string;
-  targetSentence: string;
-  praise: string;
-  fix: string;
-  explanation: string;
+export interface FeedbackPoint {
+  id: string;
+  category: string;
+  summaryTag: string;
+  yourSentence: string;
+  thinkAbout: string;
   question: string;
   whyExplanation: string;
-  hint2: string;
-  hint3Pattern: string;
-  hint3Example: string;
   koreanHelp: {
-    praise: string;
-    fix: string;
-    explanation: string;
+    thinkAbout: string;
     question: string;
     whyExplanation: string;
-    hint1: string;
-    hint2: string;
-    hint3: string;
   };
+}
+
+export interface CoachFeedback {
+  goodPoint: string;
+  goodPointKorean: string;
+  feedbackPoints: FeedbackPoint[];
   isUncertain?: boolean;
   usedFallback?: boolean;
 }
 
-export interface RevisionCheckResult {
-  fixed: boolean;
+export interface CheckAgainResult {
+  improved: string[];
+  remainingPointIds: string[];
   encouragement: string;
   nextLevel: SupportLevel;
-  levelChangeReason: 'up' | 'down' | 'same';
+}
+
+export interface SavedFeedbackPointSummary {
+  category: string;
+  summaryTag: string;
+  yourSentence: string;
+  thinkAbout: string;
+  question: string;
 }
 
 export interface StoryRecord {
@@ -81,13 +87,13 @@ export interface StoryRecord {
   topicId: string;
   topicTitle: string;
   supportLevel: SupportLevel;
-  hintsUsed: number;
-  maxHintLevel: HintLevel;
+  feedbackCount: number;
+  feedbackPoints: SavedFeedbackPointSummary[];
   firstDraft: string;
   finalDraft: string;
   reflectionNote: string;
   aiHelpSummary: string;
-  feedbackFocus?: string;
-  whyOpened?: boolean;
-  koreanHelpUsed?: boolean;
+  whyOpened: boolean;
+  koreanHelpUsed: boolean;
+  checkAgainUsed: boolean;
 }
